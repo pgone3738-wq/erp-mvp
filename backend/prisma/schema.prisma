@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // <-- It MUST say exactly this!
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   @default("SALES")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  sku         String   @unique
+  price       Float
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("items")
+}
+model Invoice {
+  id           String   @id @default(uuid())
+  customerName String
+  itemName     String
+  quantity     Int
+  totalAmount  Float
+  createdAt    DateTime @default(now())
+
+  @@map("invoices")
+}
+model Bill {
+  id           String   @id @default(uuid())
+  vendorName   String
+  itemName     String
+  quantity     Int
+  totalCost    Float
+  createdAt    DateTime @default(now())
+
+  @@map("bills")
+}
+model Account {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  type      String   // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  createdAt DateTime @default(now())
+
+  lines     JournalLine[]
+
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  reference   String   // e.g., "Sales Invoice #123"
+  description String
+  createdAt   DateTime @default(now())
+
+  lines       JournalLine[]
+
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id             String       @id @default(uuid())
+  journalEntryId String
+  accountId      String
+  debit          Float        @default(0)
+  credit         Float        @default(0)
+
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account        Account      @relation(fields: [accountId], references: [id])
+
+  @@map("journal_lines")
+}
