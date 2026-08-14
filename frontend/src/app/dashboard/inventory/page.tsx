@@ -28,9 +28,9 @@ export default function InventoryPage() {
 
   const fetchItems = async () => {
     const token = localStorage.getItem('erp_token')
-    const res = await fetch('http://localhost:3000/items', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/items`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+})
     const data = await res.json()
     if (Array.isArray(data)) {
       setItems(data)

@@ -15,14 +15,31 @@ export default function DashboardHome() {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('erp_token')
-        const res = await fetch('http://localhost:3000/reports/summary', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        const headers = { 'Authorization': `Bearer ${token}` }
         
-        const data = await res.json()
-        if (data && data.totalRevenue !== undefined) {
-          setStats(data)
-        }
+        // Define the API URL (uses localhost for dev, or Vercel env var for production)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+        // Fetch items and invoices at the same time
+        const [itemsRes, invoicesRes] = await Promise.all([
+          fetch(`${apiUrl}/items`, { headers }),
+          fetch(`${apiUrl}/invoices`, { headers })
+        ])
+
+        const items = await itemsRes.json()
+        const invoices = await invoicesRes.json()
+
+        // Calculate total revenue from all invoices
+        const totalRevenue = Array.isArray(invoices) 
+          ? invoices.reduce((sum, inv) => sum + inv.totalAmount, 0) 
+          : 0
+
+        setStats({
+          totalRevenue,
+          totalExpenses: 0, // Keeping 0 for now so it doesn't crash
+          netProfit: totalRevenue,
+          itemCount: Array.isArray(items) ? items.length : 0,
+        })
       } catch (error) {
         console.error("Failed to fetch dashboard data", error)
       }
@@ -41,7 +58,7 @@ export default function DashboardHome() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Net Profit Card (The most important metric) */}
+        {/* Net Profit Card */}
         <Card className={stats.netProfit >= 0 ? 'border-green-500 border-2' : 'border-red-500 border-2'}>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-500">Net Profit</CardTitle>
