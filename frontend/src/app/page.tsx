@@ -26,7 +26,7 @@ export default function Home() {
       : { email, password, firstName, lastName }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/auth/${endpoint}`, {
+      const res = await fetch(`https://erp-mvp-unc2.onrender.com/auth/${endpoint}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(payload)
