@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -11,21 +11,49 @@ export class ItemService {
 
   async create(data: { name: string; sku: string; price: number }) {
     try {
-      // Notice we don't take 'stock' from the user anymore. It defaults to 0!
       return await this.prisma.item.create({
         data: {
           name: data.name,
           sku: data.sku,
           price: data.price,
-          stock: 0, // Always start at 0
+          stock: 0,
         },
       });
     } catch (error) {
-      // If Prisma throws a duplicate SKU error (P2002), send a nice message
       if (error.code === 'P2002') {
         throw new ConflictException('An item with this SKU already exists.');
       }
       throw error;
+    }
+  }
+
+  // NEW: Update an item
+  async update(id: string, data: { name: string; sku: string; price: number }) {
+    try {
+      return await this.prisma.item.update({
+        where: { id },
+        data: {
+          name: data.name,
+          sku: data.sku,
+          price: data.price,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('An item with this SKU already exists.');
+      }
+      throw new NotFoundException('Item not found');
+    }
+  }
+
+  // NEW: Delete an item
+  async remove(id: string) {
+    try {
+      return await this.prisma.item.delete({
+        where: { id },
+      });
+    } catch (error) {
+      throw new NotFoundException('Item not found');
     }
   }
 }
