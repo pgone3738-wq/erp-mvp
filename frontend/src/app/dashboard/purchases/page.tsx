@@ -18,16 +18,23 @@ type Bill = {
   createdAt: string
 }
 
+type Item = {
+  id: string
+  name: string
+}
+
 export default function PurchasesPage() {
   const [bills, setBills] = useState<Bill[]>([])
+  const [items, setItems] = useState<Item[]>([])
   const [vendorName, setVendorName] = useState('')
-  const [itemName, setItemName] = useState('')
+  const [selectedItem, setSelectedItem] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [totalCost, setTotalCost] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchBills()
+    fetchItems()
   }, [])
 
   const fetchBills = async () => {
@@ -38,6 +45,17 @@ export default function PurchasesPage() {
     const data = await res.json()
     if (Array.isArray(data)) {
       setBills(data)
+    }
+  }
+
+  const fetchItems = async () => {
+    const token = localStorage.getItem('erp_token')
+    const res = await fetch(`${API_URL}/items`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+    if (Array.isArray(data)) {
+      setItems(data)
     }
   }
 
@@ -55,7 +73,7 @@ export default function PurchasesPage() {
         },
         body: JSON.stringify({
           vendorName,
-          itemName,
+          itemName: selectedItem,
           quantity: parseInt(quantity),
           totalCost: parseFloat(totalCost)
         })
@@ -67,7 +85,7 @@ export default function PurchasesPage() {
           description: `Added ${data.quantity}x ${data.itemName} to inventory.`,
         })
         setVendorName('')
-        setItemName('')
+        setSelectedItem('')
         setQuantity('1')
         setTotalCost('')
         fetchBills()
@@ -101,10 +119,26 @@ export default function PurchasesPage() {
                 <Label htmlFor="vendorName">Vendor Name</Label>
                 <Input id="vendorName" placeholder="e.g. TechSupplier Inc." value={vendorName} onChange={(e) => setVendorName(e.target.value)} required />
               </div>
+              
+              {/* NEW DROPDOWN SELECTOR */}
               <div className="space-y-2">
-                <Label htmlFor="itemName">Item Name (Must match inventory)</Label>
-                <Input id="itemName" placeholder="e.g. Laptop" value={itemName} onChange={(e) => setItemName(e.target.value)} required />
+                <Label htmlFor="itemName">Select Item</Label>
+                <select 
+                  id="itemName" 
+                  value={selectedItem} 
+                  onChange={(e) => setSelectedItem(e.target.value)}
+                  className="w-full p-2 border rounded bg-white text-gray-900"
+                  required
+                >
+                  <option value="">-- Choose an Item --</option>
+                  {items.map((item) => (
+                    <option key={item.id} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantity Received</Label>
