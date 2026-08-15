@@ -8,9 +8,10 @@ import { InvoiceModule } from './invoice/invoice.module'; // Only ONE of these!
 import { BillModule } from './bill/bill.module';
 import { JournalModule } from './journal/journal.module';
 import { ReportModule } from './report/report.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ItemModule, InvoiceModule, BillModule, JournalModule, ReportModule],
+  imports: [PrismaModule, AuthModule, ItemModule, InvoiceModule, BillModule, JournalModule, ReportModule, ContactModule],
   controllers: [AppController],
   providers: [AppService],
 })

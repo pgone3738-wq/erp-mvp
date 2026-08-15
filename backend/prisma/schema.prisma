@@ -98,3 +98,13 @@ model JournalLine {
 
   @@map("journal_lines")
 }
+model Contact {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  type      String   // "CUSTOMER" or "VENDOR"
+  createdAt DateTime @default(now())
+
+  @@map("contacts")
+}
