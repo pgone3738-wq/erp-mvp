@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
+
+const API_URL = 'https://erp-mvp-unc2.onrender.com'
 
 type Bill = {
   id: string
@@ -22,7 +25,6 @@ export default function PurchasesPage() {
   const [quantity, setQuantity] = useState('1')
   const [totalCost, setTotalCost] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
 
   useEffect(() => {
     fetchBills()
@@ -30,7 +32,7 @@ export default function PurchasesPage() {
 
   const fetchBills = async () => {
     const token = localStorage.getItem('erp_token')
-    const res = await fetch('http://localhost:3000/bills', {
+    const res = await fetch(`${API_URL}/bills`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
@@ -42,11 +44,10 @@ export default function PurchasesPage() {
   const handleCreateBill = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setMessage('')
 
     try {
       const token = localStorage.getItem('erp_token')
-      const res = await fetch('http://localhost:3000/bills', {
+      const res = await fetch(`${API_URL}/bills`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -62,17 +63,23 @@ export default function PurchasesPage() {
 
       const data = await res.json()
       if (res.ok) {
-        setMessage(`Success! Bill created. ${data.quantity} ${data.itemName}(s) added to inventory.`)
+        toast.success('Stock Received!', {
+          description: `Added ${data.quantity}x ${data.itemName} to inventory.`,
+        })
         setVendorName('')
         setItemName('')
         setQuantity('1')
         setTotalCost('')
         fetchBills()
       } else {
-        setMessage(`Error: ${data.message}`)
+        toast.error('Failed to record bill', {
+          description: data.message,
+        })
       }
     } catch (error) {
-      setMessage('Failed to connect to backend')
+      toast.error('Connection Error', {
+        description: 'Could not connect to the backend. Is Render awake?',
+      })
     } finally {
       setLoading(false)
     }
@@ -111,7 +118,6 @@ export default function PurchasesPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Saving...' : 'Receive Stock'}
               </Button>
-              {message && <p className="text-sm text-center text-gray-600">{message}</p>}
             </form>
           </CardContent>
         </Card>

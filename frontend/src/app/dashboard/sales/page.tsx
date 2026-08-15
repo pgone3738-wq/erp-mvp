@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
+
+const API_URL = 'https://erp-mvp-unc2.onrender.com'
 
 type Invoice = {
   id: string
@@ -22,18 +25,15 @@ export default function SalesPage() {
   const [quantity, setQuantity] = useState('1')
   const [totalAmount, setTotalAmount] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
 
   useEffect(() => {
     fetchInvoices()
   }, [])
 
-    const fetchInvoices = async () => {
-    const token = localStorage.getItem('erp_token') // Get the token
-    const res = await fetch('http://localhost:3000/invoices', {
-      headers: {
-        'Authorization': `Bearer ${token}` // Send the token
-      }
+  const fetchInvoices = async () => {
+    const token = localStorage.getItem('erp_token')
+    const res = await fetch(`${API_URL}/invoices`, {
+      headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
     if (Array.isArray(data)) {
@@ -44,15 +44,14 @@ export default function SalesPage() {
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setMessage('')
 
-        try {
-      const token = localStorage.getItem('erp_token') // Get the token
-      const res = await fetch('http://localhost:3000/invoices', {
+    try {
+      const token = localStorage.getItem('erp_token')
+      const res = await fetch(`${API_URL}/invoices`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Send the token
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           customerName,
@@ -64,19 +63,23 @@ export default function SalesPage() {
 
       const data = await res.json()
       if (res.ok) {
-        setMessage(`Success! Invoice created for ${data.customerName}.`)
-        // Clear form
+        toast.success('Invoice Created!', {
+          description: `Sold ${data.quantity}x ${data.itemName} to ${data.customerName}.`,
+        })
         setCustomerName('')
         setItemName('')
         setQuantity('1')
         setTotalAmount('')
-        // Refresh invoice list
         fetchInvoices()
       } else {
-        setMessage(`Error: ${data.message}`)
+        toast.error('Failed to create invoice', {
+          description: data.message,
+        })
       }
     } catch (error) {
-      setMessage('Failed to connect to backend')
+      toast.error('Connection Error', {
+        description: 'Could not connect to the backend. Is Render awake?',
+      })
     } finally {
       setLoading(false)
     }
@@ -115,7 +118,6 @@ export default function SalesPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Invoice'}
               </Button>
-              {message && <p className="text-sm text-center text-gray-600">{message}</p>}
             </form>
           </CardContent>
         </Card>
