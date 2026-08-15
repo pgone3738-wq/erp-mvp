@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
+const API_URL = 'https://erp-mvp-unc2.onrender.com'
+
 export default function DashboardHome() {
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -15,31 +17,16 @@ export default function DashboardHome() {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('erp_token')
-        const headers = { 'Authorization': `Bearer ${token}` }
         
-        // Define the API URL (uses localhost for dev, or Vercel env var for production)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
-        // Fetch items and invoices at the same time
-        const [itemsRes, invoicesRes] = await Promise.all([
-          fetch(`${apiUrl}/items`, { headers }),
-          fetch(`${apiUrl}/invoices`, { headers })
-        ])
-
-        const items = await itemsRes.json()
-        const invoices = await invoicesRes.json()
-
-        // Calculate total revenue from all invoices
-        const totalRevenue = Array.isArray(invoices) 
-          ? invoices.reduce((sum, inv) => sum + inv.totalAmount, 0) 
-          : 0
-
-        setStats({
-          totalRevenue,
-          totalExpenses: 0, // Keeping 0 for now so it doesn't crash
-          netProfit: totalRevenue,
-          itemCount: Array.isArray(items) ? items.length : 0,
+        // Fetch the summary from the backend report route
+        const res = await fetch(`${API_URL}/reports/summary`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         })
+        
+        const data = await res.json()
+        if (data && data.totalRevenue !== undefined) {
+          setStats(data)
+        }
       } catch (error) {
         console.error("Failed to fetch dashboard data", error)
       }
