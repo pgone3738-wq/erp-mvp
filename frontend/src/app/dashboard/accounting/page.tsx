@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
+const API_URL = 'https://erp-mvp-unc2.onrender.com'
+
 type JournalLine = {
   id: string
   debit: number
@@ -27,7 +29,7 @@ export default function AccountingPage() {
   useEffect(() => {
     const fetchJournal = async () => {
       const token = localStorage.getItem('erp_token')
-      const res = await fetch('http://localhost:3000/journal', {
+      const res = await fetch(`${API_URL}/journal`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await res.json()
