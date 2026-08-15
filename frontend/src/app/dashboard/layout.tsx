@@ -11,6 +11,7 @@ const navLinks = [
   { name: 'Inventory', href: '/dashboard/inventory' },
   { name: 'Sales', href: '/dashboard/sales' },
   { name: 'Purchases', href: '/dashboard/purchases' },
+  { name: 'Contacts', href: '/dashboard/contacts' },
   { name: 'Accounting', href: '/dashboard/accounting' },
 ]
 
