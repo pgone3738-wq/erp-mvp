@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { toast } from 'sonner' // <-- ADDED THIS
+import { toast } from 'sonner'
+
+// Your live Render Backend URL
+const API_URL = 'https://erp-mvp-unc2.onrender.com'
 
 type Item = {
   id: string
@@ -28,9 +31,11 @@ export default function InventoryPage() {
 
   const fetchItems = async () => {
     const token = localStorage.getItem('erp_token')
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/items`, {
-  headers: { 'Authorization': `Bearer ${token}` }
-})
+    const res = await fetch(`${API_URL}/items`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
     const data = await res.json()
     if (Array.isArray(data)) {
       setItems(data)
@@ -43,7 +48,7 @@ export default function InventoryPage() {
 
     try {
       const token = localStorage.getItem('erp_token')
-      const res = await fetch('http://localhost:3000/items', {
+      const res = await fetch(`${API_URL}/items`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -57,7 +62,6 @@ export default function InventoryPage() {
       })
 
       if (res.ok) {
-        // SUCCESS TOAST
         toast.success('Product Added!', {
           description: `${name} has been added to your catalog.`,
         })
@@ -67,7 +71,6 @@ export default function InventoryPage() {
         fetchItems()
       } else {
         const errorData = await res.json()
-        // ERROR TOAST
         toast.error('Failed to add item', {
           description: errorData.message,
         })
