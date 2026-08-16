@@ -23,10 +23,18 @@ type Item = {
   name: string
 }
 
+type Contact = {
+  id: string
+  name: string
+  type: string
+}
+
 export default function PurchasesPage() {
   const [bills, setBills] = useState<Bill[]>([])
   const [items, setItems] = useState<Item[]>([])
-  const [vendorName, setVendorName] = useState('')
+  const [vendors, setVendors] = useState<Contact[]>([])
+  
+  const [selectedVendor, setSelectedVendor] = useState('')
   const [selectedItem, setSelectedItem] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [totalCost, setTotalCost] = useState('')
@@ -35,6 +43,7 @@ export default function PurchasesPage() {
   useEffect(() => {
     fetchBills()
     fetchItems()
+    fetchVendors()
   }, [])
 
   const fetchBills = async () => {
@@ -43,9 +52,7 @@ export default function PurchasesPage() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
-    if (Array.isArray(data)) {
-      setBills(data)
-    }
+    if (Array.isArray(data)) setBills(data)
   }
 
   const fetchItems = async () => {
@@ -54,8 +61,18 @@ export default function PurchasesPage() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
+    if (Array.isArray(data)) setItems(data)
+  }
+
+  const fetchVendors = async () => {
+    const token = localStorage.getItem('erp_token')
+    const res = await fetch(`${API_URL}/contacts`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+    // Filter to only show VENDORS
     if (Array.isArray(data)) {
-      setItems(data)
+      setVendors(data.filter(c => c.type === 'VENDOR'))
     }
   }
 
@@ -72,7 +89,7 @@ export default function PurchasesPage() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          vendorName,
+          vendorName: selectedVendor, // Use dropdown value
           itemName: selectedItem,
           quantity: parseInt(quantity),
           totalCost: parseFloat(totalCost)
@@ -84,20 +101,16 @@ export default function PurchasesPage() {
         toast.success('Stock Received!', {
           description: `Added ${data.quantity}x ${data.itemName} to inventory.`,
         })
-        setVendorName('')
+        setSelectedVendor('')
         setSelectedItem('')
         setQuantity('1')
         setTotalCost('')
         fetchBills()
       } else {
-        toast.error('Failed to record bill', {
-          description: data.message,
-        })
+        toast.error('Failed to record bill', { description: data.message })
       }
     } catch (error) {
-      toast.error('Connection Error', {
-        description: 'Could not connect to the backend. Is Render awake?',
-      })
+      toast.error('Connection Error', { description: 'Is Render awake?' })
     } finally {
       setLoading(false)
     }
@@ -108,19 +121,30 @@ export default function PurchasesPage() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Purchases & Vendors</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Create Bill Form */}
         <Card className="md:col-span-1 h-fit">
           <CardHeader>
             <CardTitle>Record Vendor Bill</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateBill} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="vendorName">Vendor Name</Label>
-                <Input id="vendorName" placeholder="e.g. TechSupplier Inc." value={vendorName} onChange={(e) => setVendorName(e.target.value)} required />
-              </div>
               
-              {/* NEW DROPDOWN SELECTOR */}
+              {/* VENDOR DROPDOWN */}
+              <div className="space-y-2">
+                <Label htmlFor="vendorName">Select Vendor</Label>
+                <select 
+                  id="vendorName" 
+                  value={selectedVendor} 
+                  onChange={(e) => setSelectedVendor(e.target.value)}
+                  className="w-full p-2 border rounded bg-white text-gray-900"
+                  required
+                >
+                  <option value="">-- Choose a Vendor --</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="itemName">Select Item</Label>
                 <select 
@@ -132,9 +156,7 @@ export default function PurchasesPage() {
                 >
                   <option value="">-- Choose an Item --</option>
                   {items.map((item) => (
-                    <option key={item.id} value={item.name}>
-                      {item.name}
-                    </option>
+                    <option key={item.id} value={item.name}>{item.name}</option>
                   ))}
                 </select>
               </div>
@@ -156,7 +178,6 @@ export default function PurchasesPage() {
           </CardContent>
         </Card>
 
-        {/* Bills List Table */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
@@ -176,9 +197,7 @@ export default function PurchasesPage() {
                 <tbody>
                   {bills.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-4 text-center text-gray-400">
-                        No bills recorded yet.
-                      </td>
+                      <td colSpan={5} className="py-4 text-center text-gray-400">No bills recorded yet.</td>
                     </tr>
                   ) : (
                     bills.map((bill) => (

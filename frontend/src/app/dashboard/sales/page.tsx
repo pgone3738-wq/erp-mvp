@@ -25,10 +25,18 @@ type Item = {
   stock: number
 }
 
+type Contact = {
+  id: string
+  name: string
+  type: string
+}
+
 export default function SalesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [items, setItems] = useState<Item[]>([])
-  const [customerName, setCustomerName] = useState('')
+  const [customers, setCustomers] = useState<Contact[]>([])
+  
+  const [selectedCustomer, setSelectedCustomer] = useState('')
   const [selectedItem, setSelectedItem] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [totalAmount, setTotalAmount] = useState('')
@@ -37,6 +45,7 @@ export default function SalesPage() {
   useEffect(() => {
     fetchInvoices()
     fetchItems()
+    fetchCustomers()
   }, [])
 
   const fetchInvoices = async () => {
@@ -45,9 +54,7 @@ export default function SalesPage() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
-    if (Array.isArray(data)) {
-      setInvoices(data)
-    }
+    if (Array.isArray(data)) setInvoices(data)
   }
 
   const fetchItems = async () => {
@@ -56,12 +63,21 @@ export default function SalesPage() {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
+    if (Array.isArray(data)) setItems(data)
+  }
+
+  const fetchCustomers = async () => {
+    const token = localStorage.getItem('erp_token')
+    const res = await fetch(`${API_URL}/contacts`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+    // Filter to only show CUSTOMERS
     if (Array.isArray(data)) {
-      setItems(data)
+      setCustomers(data.filter(c => c.type === 'CUSTOMER'))
     }
   }
 
-  // When an item is selected from the dropdown, auto-calculate the total
   const handleItemChange = (name: string) => {
     setSelectedItem(name)
     const item = items.find(i => i.name === name)
@@ -71,7 +87,6 @@ export default function SalesPage() {
     }
   }
 
-  // If quantity changes, recalculate the total
   const handleQtyChange = (qty: string) => {
     setQuantity(qty)
     const item = items.find(i => i.name === selectedItem)
@@ -93,8 +108,8 @@ export default function SalesPage() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          customerName,
-          itemName: selectedItem, // Use the dropdown value
+          customerName: selectedCustomer, // Use dropdown value
+          itemName: selectedItem,
           quantity: parseInt(quantity),
           totalAmount: parseFloat(totalAmount)
         })
@@ -105,20 +120,16 @@ export default function SalesPage() {
         toast.success('Invoice Created!', {
           description: `Sold ${data.quantity}x ${data.itemName} to ${data.customerName}.`,
         })
-        setCustomerName('')
+        setSelectedCustomer('')
         setSelectedItem('')
         setQuantity('1')
         setTotalAmount('')
         fetchInvoices()
       } else {
-        toast.error('Failed to create invoice', {
-          description: data.message,
-        })
+        toast.error('Failed to create invoice', { description: data.message })
       }
     } catch (error) {
-      toast.error('Connection Error', {
-        description: 'Could not connect to the backend. Is Render awake?',
-      })
+      toast.error('Connection Error', { description: 'Is Render awake?' })
     } finally {
       setLoading(false)
     }
@@ -129,19 +140,30 @@ export default function SalesPage() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Sales & Invoicing</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Create Invoice Form */}
         <Card className="md:col-span-1 h-fit">
           <CardHeader>
             <CardTitle>Create New Invoice</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateInvoice} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
-              </div>
               
-              {/* NEW DROPDOWN SELECTOR */}
+              {/* CUSTOMER DROPDOWN */}
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Select Customer</Label>
+                <select 
+                  id="customerName" 
+                  value={selectedCustomer} 
+                  onChange={(e) => setSelectedCustomer(e.target.value)}
+                  className="w-full p-2 border rounded bg-white text-gray-900"
+                  required
+                >
+                  <option value="">-- Choose a Customer --</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="itemName">Select Item</Label>
                 <select 
@@ -177,7 +199,6 @@ export default function SalesPage() {
           </CardContent>
         </Card>
 
-        {/* Invoices List Table */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Recent Invoices</CardTitle>
@@ -197,9 +218,7 @@ export default function SalesPage() {
                 <tbody>
                   {invoices.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-4 text-center text-gray-400">
-                        No invoices yet.
-                      </td>
+                      <td colSpan={5} className="py-4 text-center text-gray-400">No invoices yet.</td>
                     </tr>
                   ) : (
                     invoices.map((invoice) => (
