@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react' // <-- Added for spinner
 
 const API_URL = 'https://erp-mvp-unc2.onrender.com'
 
@@ -23,8 +24,7 @@ export default function InventoryPage() {
   const [sku, setSku] = useState('')
   const [price, setPrice] = useState('')
   const [loading, setLoading] = useState(false)
-  
-  // New state to track if we are editing an item
+  const [loadingData, setLoadingData] = useState(true) // <-- NEW: loading state for table
   const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -32,6 +32,7 @@ export default function InventoryPage() {
   }, [])
 
   const fetchItems = async () => {
+    setLoadingData(true) // Start loading
     const token = localStorage.getItem('erp_token')
     const res = await fetch(`${API_URL}/items`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -40,17 +41,15 @@ export default function InventoryPage() {
     if (Array.isArray(data)) {
       setItems(data)
     }
+    setLoadingData(false) // Stop loading
   }
 
-  // Handles both Creating and Updating
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     const token = localStorage.getItem('erp_token')
-    const url = editingId 
-      ? `${API_URL}/items/${editingId}` 
-      : `${API_URL}/items`
+    const url = editingId ? `${API_URL}/items/${editingId}` : `${API_URL}/items`
     const method = editingId ? 'PUT' : 'POST'
 
     try {
@@ -75,32 +74,24 @@ export default function InventoryPage() {
         fetchItems()
       } else {
         const errorData = await res.json()
-        toast.error('Failed to save item', {
-          description: errorData.message,
-        })
+        toast.error('Failed to save item', { description: errorData.message })
       }
     } catch (error) {
-      toast.error('Connection Error', {
-        description: 'Could not connect to the backend.',
-      })
+      toast.error('Connection Error', { description: 'Could not connect to the backend.' })
     } finally {
       setLoading(false)
     }
   }
 
-  // Populates the form with the item's data to edit
   const handleEditClick = (item: Item) => {
     setEditingId(item.id)
     setName(item.name)
     setSku(item.sku)
     setPrice(item.price.toString())
-    // Scroll to top so the user sees the form
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleCancelEdit = () => {
-    resetForm()
-  }
+  const handleCancelEdit = () => { resetForm() }
 
   const resetForm = () => {
     setEditingId(null)
@@ -109,23 +100,16 @@ export default function InventoryPage() {
     setPrice('')
   }
 
-  // Handles deleting an item
   const handleDelete = async (id: string) => {
-    // Simple confirmation
     if (!window.confirm('Are you sure you want to delete this item?')) return;
-
     const token = localStorage.getItem('erp_token')
     try {
       const res = await fetch(`${API_URL}/items/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })
-
       if (res.ok) {
-        toast.success('Item Deleted!', {
-          description: 'The item has been removed from your catalog.',
-        })
-        // If we were editing this item, clear the form
+        toast.success('Item Deleted!', { description: 'The item has been removed.' })
         if (editingId === id) resetForm()
         fetchItems()
       } else {
@@ -139,9 +123,8 @@ export default function InventoryPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Product Catalog</h1>
-      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Add/Edit Item Form */}
+        {/* Add/Edit Form */}
         <Card className="md:col-span-1 h-fit">
           <CardHeader>
             <CardTitle>{editingId ? 'Edit Product' : 'Add New Product'}</CardTitle>
@@ -165,16 +148,14 @@ export default function InventoryPage() {
                   {loading ? 'Saving...' : (editingId ? 'Update Item' : 'Add to Catalog')}
                 </Button>
                 {editingId && (
-                  <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                    Cancel
-                  </Button>
+                  <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
                 )}
               </div>
             </form>
           </CardContent>
         </Card>
 
-        {/* Items List Table */}
+        {/* Items Table */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Current Stock</CardTitle>
@@ -188,11 +169,17 @@ export default function InventoryPage() {
                     <th className="pb-2 font-medium">SKU</th>
                     <th className="pb-2 font-medium text-right">Price</th>
                     <th className="pb-2 font-medium text-right">Stock</th>
-                    <th className="pb-2 font-medium text-right">Actions</th> {/* NEW COLUMN */}
+                    <th className="pb-2 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.length === 0 ? (
+                  {loadingData ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+                      </td>
+                    </tr>
+                  ) : items.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-4 text-center text-gray-400">
                         No items in catalog yet.
@@ -210,12 +197,8 @@ export default function InventoryPage() {
                           </span>
                         </td>
                         <td className="py-3 text-right space-x-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEditClick(item)}>
-                            Edit
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>
-                            Delete
-                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleEditClick(item)}>Edit</Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>Delete</Button>
                         </td>
                       </tr>
                     ))

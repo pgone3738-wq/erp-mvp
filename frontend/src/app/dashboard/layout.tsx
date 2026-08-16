@@ -3,8 +3,9 @@
 import { Button } from '@/components/ui/button'
 import { ReactNode, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Toaster } from '@/components/ui/sonner' // <-- ADDED THIS
+import { useRouter, usePathname } from 'next/navigation' // <-- Added usePathname
+import { Toaster } from '@/components/ui/sonner'
+import { Loader2 } from 'lucide-react' // <-- Added for spinner
 
 const navLinks = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -17,6 +18,7 @@ const navLinks = [
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname() // <-- Get current path
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
@@ -35,7 +37,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthorized) {
-    return null 
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    )
   }
 
   return (
@@ -46,13 +52,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           ERP MVP
         </div>
         <nav className="flex flex-col gap-2">
-          {navLinks.map((link) => (
-            <Link href={link.href} key={link.name}>
-              <Button variant="ghost" className="w-full justify-start text-gray-300 hover:bg-gray-800 hover:text-white">
-                {link.name}
-              </Button>
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            // Check if the current path matches the link
+            const isActive = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
+            
+            return (
+              <Link href={link.href} key={link.name}>
+                <Button 
+                  variant={isActive ? "secondary" : "ghost"} 
+                  className={`w-full justify-start ${isActive ? 'bg-gray-800 text-white font-bold' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}
+                >
+                  {link.name}
+                </Button>
+              </Link>
+            )
+          })}
         </nav>
         <div className="mt-auto">
           <Button variant="destructive" className="w-full" onClick={handleLogout}>
@@ -66,7 +80,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* Toaster Component (This makes the popups appear) */}
+      {/* Toaster Component */}
       <Toaster richColors position="bottom-right" />
     </div>
   )
