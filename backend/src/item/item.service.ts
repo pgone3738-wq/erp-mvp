@@ -9,9 +9,9 @@ export class ItemService {
     return this.prisma.item.findMany();
   }
 
-  async create(data: { name: string; sku: string; price: number }) {
+  async create(data: { name: string; sku: string; price: number }, userId?: string) {
     try {
-      return await this.prisma.item.create({
+      const item = await this.prisma.item.create({
         data: {
           name: data.name,
           sku: data.sku,
@@ -19,6 +19,18 @@ export class ItemService {
           stock: 0,
         },
       });
+
+      // WRITE AUDIT LOG
+      await this.prisma.auditLog.create({
+        data: {
+          userId: userId || null,
+          action: 'CREATE',
+          entity: 'Item',
+          entityId: item.id,
+        },
+      });
+
+      return item;
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ConflictException('An item with this SKU already exists.');
@@ -27,10 +39,9 @@ export class ItemService {
     }
   }
 
-  // NEW: Update an item
-  async update(id: string, data: { name: string; sku: string; price: number }) {
+  async update(id: string, data: { name: string; sku: string; price: number }, userId?: string) {
     try {
-      return await this.prisma.item.update({
+      const item = await this.prisma.item.update({
         where: { id },
         data: {
           name: data.name,
@@ -38,6 +49,18 @@ export class ItemService {
           price: data.price,
         },
       });
+
+      // WRITE AUDIT LOG
+      await this.prisma.auditLog.create({
+        data: {
+          userId: userId || null,
+          action: 'UPDATE',
+          entity: 'Item',
+          entityId: item.id,
+        },
+      });
+
+      return item;
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ConflictException('An item with this SKU already exists.');
@@ -46,12 +69,21 @@ export class ItemService {
     }
   }
 
-  // NEW: Delete an item
-  async remove(id: string) {
+  async remove(id: string, userId?: string) {
     try {
-      return await this.prisma.item.delete({
-        where: { id },
+      await this.prisma.item.delete({ where: { id } });
+
+      // WRITE AUDIT LOG
+      await this.prisma.auditLog.create({
+        data: {
+          userId: userId || null,
+          action: 'DELETE',
+          entity: 'Item',
+          entityId: id,
+        },
       });
+
+      return { success: true };
     } catch (error) {
       throw new NotFoundException('Item not found');
     }

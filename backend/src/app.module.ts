@@ -9,9 +9,10 @@ import { BillModule } from './bill/bill.module';
 import { JournalModule } from './journal/journal.module';
 import { ReportModule } from './report/report.module';
 import { ContactModule } from './contact/contact.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ItemModule, InvoiceModule, BillModule, JournalModule, ReportModule, ContactModule],
+  imports: [PrismaModule, AuthModule, ItemModule, InvoiceModule, BillModule, JournalModule, ReportModule, ContactModule, AuditModule],
   controllers: [AppController],
   providers: [AppService],
 })
