@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react' // <-- Added for spinner
+import { Loader2 } from 'lucide-react'
 
 const API_URL = 'https://erp-mvp-unc2.onrender.com'
 
@@ -24,7 +24,7 @@ export default function InventoryPage() {
   const [sku, setSku] = useState('')
   const [price, setPrice] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loadingData, setLoadingData] = useState(true) // <-- NEW: loading state for table
+  const [loadingData, setLoadingData] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function InventoryPage() {
   }, [])
 
   const fetchItems = async () => {
-    setLoadingData(true) // Start loading
+    setLoadingData(true)
     const token = localStorage.getItem('erp_token')
     const res = await fetch(`${API_URL}/items`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -41,7 +41,7 @@ export default function InventoryPage() {
     if (Array.isArray(data)) {
       setItems(data)
     }
-    setLoadingData(false) // Stop loading
+    setLoadingData(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +124,6 @@ export default function InventoryPage() {
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Product Catalog</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Add/Edit Form */}
         <Card className="md:col-span-1 h-fit">
           <CardHeader>
             <CardTitle>{editingId ? 'Edit Product' : 'Add New Product'}</CardTitle>
@@ -155,7 +154,6 @@ export default function InventoryPage() {
           </CardContent>
         </Card>
 
-        {/* Items Table */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Current Stock</CardTitle>
