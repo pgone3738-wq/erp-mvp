@@ -30,7 +30,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [router])
 
-  const handleLogout = () => {
+    const handleLogout = () => {
+    // ADD THIS LINE! It triggers the spinner to show.
+    setIsAuthorized(false) 
+    
     localStorage.removeItem('erp_token')
     localStorage.removeItem('erp_user')
     router.push('/')
