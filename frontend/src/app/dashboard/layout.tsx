@@ -14,6 +14,7 @@ const navLinks = [
   { name: 'Purchases', href: '/dashboard/purchases' },
   { name: 'Contacts', href: '/dashboard/contacts' },
   { name: 'Accounting', href: '/dashboard/accounting' },
+  { name: 'Audit Logs', href: '/dashboard/audit' },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
